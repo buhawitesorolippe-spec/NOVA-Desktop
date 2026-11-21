@@ -1,0 +1,13 @@
+.env
+.nova-config.json
+.nova-config.json.tmp
+node_modules/
+desktop/Nova.Desktop/bin/
+desktop/Nova.Desktop/obj/
+desktop/Nova.Desktop/*_wpftmp.csproj
+dist/
+core-bundle/
+models/
+*.user
+*.suo
+TestResults/

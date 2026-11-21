@@ -1,0 +1,514 @@
+<Window x:Class="Nova.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Nova.Desktop"
+        Title="NOVA" Width="1120" Height="760" MinWidth="760" MinHeight="540"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextBrush}"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:BooleanToAlignmentConverter x:Key="UserAlignment" />
+        <DataTemplate x:Key="ChatMessageTemplate" DataType="{x:Type local:ChatMessage}">
+            <Grid Margin="0,7">
+                <Border HorizontalAlignment="{Binding IsUser, Converter={StaticResource UserAlignment}}"
+                        MaxWidth="640" Padding="15,11">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource AssistantBubbleBrush}" />
+                            <Setter Property="CornerRadius" Value="16,16,16,4" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource UserBubbleBrush}" />
+                                    <Setter Property="CornerRadius" Value="16,16,4,16" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Speaker}" FontSize="9" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,5" />
+                        <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="14"
+                                   LineHeight="22" Foreground="{DynamicResource TextBrush}" />
+                        <Button Content="↻  Erneut versuchen" Tag="{Binding}" Click="RetryMessage_Click"
+                                HorizontalAlignment="Left" Margin="0,10,0,0" Padding="9,5"
+                                FontSize="11">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CanRetry}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="SidebarColumn" Width="244" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="14">
+                <StackPanel DockPanel.Dock="Top">
+                    <Grid Margin="3,1,3,28">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="27" Height="27" CornerRadius="9" BorderBrush="{DynamicResource BrandIconBorderBrush}"
+                                    BorderThickness="1" Background="{DynamicResource BrandIconBrush}">
+                                <TextBlock Text="✦" Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="NOVA" Margin="10,0,0,0" VerticalAlignment="Center"
+                                       FontSize="16" FontWeight="Bold" />
+                        </StackPanel>
+                    </Grid>
+                    <Button x:Name="NewChatButton" Click="NewChat_Click" HorizontalContentAlignment="Left"
+                            Background="{DynamicResource RaisedBrush}" BorderBrush="{DynamicResource BorderBrush}" Padding="12,10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="＋" Foreground="{DynamicResource AccentBrush}" FontSize="17" Margin="0,0,9,0" />
+                            <TextBlock Text="Neuer Chat" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="VERLAUF" Margin="11,24,0,10" Foreground="{DynamicResource MutedBrush}"
+                               FontSize="10" FontWeight="SemiBold" />
+                    <ScrollViewer MaxHeight="430" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ConversationList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type local:ConversationRecord}">
+                                    <Grid Margin="0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="{Binding Title}" Tag="{Binding}"
+                                                Click="OpenConversation_Click" HorizontalContentAlignment="Left"
+                                                BorderThickness="0" Padding="9,8" FontSize="11"
+                                                ToolTip="{Binding Title}" />
+                                        <Button Grid.Column="1" Content="＋" Tag="{Binding}"
+                                                Click="UseConversationContext_Click" Padding="7,5"
+                                                BorderThickness="0" Foreground="{DynamicResource AccentBrush}"
+                                                ToolTip="Diese Unterhaltung mit ausdrücklicher Freigabe als KI-Kontext verwenden" />
+                                        <Button Grid.Column="2" Content="🗑" Tag="{Binding}"
+                                                Click="DeleteConversation_Click" Padding="7,5"
+                                                BorderThickness="0" Foreground="{DynamicResource MutedBrush}"
+                                                ToolTip="Diese Unterhaltung löschen" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            CornerRadius="9" Padding="11" Margin="0,0,0,13">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="◈" Foreground="{DynamicResource AccentBrush}" FontSize="16"
+                                       Margin="0,0,9,0" />
+                            <StackPanel>
+                                <TextBlock Text="Lokal &amp; privat" FontSize="10" FontWeight="SemiBold" />
+                                <TextBlock Text="Deine GGUF-Chats bleiben hier" FontSize="9"
+                                           Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                            Padding="0,10,0,0">
+                        <Button Content="⚙" HorizontalAlignment="Left" Padding="8,6"
+                                Click="Settings_Click" ToolTip="Einstellungen" />
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="58" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Grid Margin="22,0">
+                    <Button x:Name="CollapseSidebarButton" Content="☰" Width="31" Height="31"
+                            Padding="0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            ToolTip="Seitenleiste ein-/ausblenden"
+                            Click="CollapseSidebar_Click" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Button x:Name="ChatTabButton" Content="Chat" BorderThickness="0" Padding="16,7"
+                                Click="ShowChatWorkspace_Click" />
+                        <Button x:Name="ResearchTabButton" Content="✦  Research" BorderThickness="0"
+                                Padding="12,7" Margin="3,0,0,0"
+                                Click="ShowResearchWorkspace_Click" ToolTip="Lokale Recherche und Zusammenfassung" />
+                        <Button x:Name="CoderTabButton" Content="⌘  Coder" BorderThickness="0"
+                                Padding="12,7" Margin="3,0,0,0"
+                                Click="ShowCoderWorkspace_Click" ToolTip="Code im NOVA-Workspace entwerfen und prüfen" />
+                    </StackPanel>
+                    <Button x:Name="CancelTaskButton" Content="Aufgabe abbrechen"
+                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="54,0,0,0" Padding="8,6" FontSize="9"
+                            Visibility="Collapsed" IsEnabled="False"
+                            Click="CancelTask_Click"
+                            ToolTip="Laufende Chat-, Research- oder Coder-Aufgabe abbrechen" />
+                    <Button x:Name="ModelButton" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Padding="10,7" Click="Settings_Click" ToolTip="Modell wechseln">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" Margin="0,0,8,0" />
+                            <TextBlock x:Name="ModelNameText" Text="Modell wird gesucht …" FontSize="10" />
+                            <TextBlock Text="  ⌄" Foreground="{DynamicResource MutedBrush}" FontSize="10" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Grid x:Name="ChatWorkspace" Grid.Row="1" Grid.RowSpan="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <StackPanel x:Name="WelcomePanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Margin="24,0,24,50">
+                    <TextBlock Text="Bereit, wenn du es bist." HorizontalAlignment="Center"
+                               FontSize="19" FontWeight="Medium" Margin="0,0,0,25" />
+                    <StackPanel Width="430">
+                        <Button Content="▧    Eine Idee ausarbeiten" HorizontalContentAlignment="Left"
+                                BorderThickness="0" Foreground="{DynamicResource SubtleTextBrush}" Padding="8,9"
+                                Click="Suggestion_Click" Tag="Hilf mir, eine Idee auszuarbeiten." />
+                        <Button Content="✎    Etwas schreiben oder bearbeiten" HorizontalContentAlignment="Left"
+                                BorderThickness="0" Foreground="{DynamicResource SubtleTextBrush}" Padding="8,9"
+                                Click="Suggestion_Click" Tag="Hilf mir, etwas zu schreiben oder zu bearbeiten." />
+                        <Button Content="◷    Frag mich etwas" HorizontalContentAlignment="Left"
+                                BorderThickness="0" Foreground="{DynamicResource SubtleTextBrush}" Padding="8,9"
+                                Click="Suggestion_Click" Tag="Wie spät ist es?" />
+                    </StackPanel>
+                </StackPanel>
+                <ScrollViewer x:Name="ConversationScroll" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" Margin="26,20">
+                    <ItemsControl x:Name="MessagesList" ItemTemplate="{StaticResource ChatMessageTemplate}" />
+                </ScrollViewer>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Margin="24,0,24,15" HorizontalAlignment="Stretch" MaxWidth="760">
+                <ProgressBar x:Name="ChatProgressBar" Height="3" Margin="9,0,9,7"
+                             Minimum="0" Maximum="100" IsIndeterminate="True"
+                             Visibility="Collapsed" />
+                <DockPanel Margin="9,0,0,8">
+                    <Button x:Name="StopSpeechButton" DockPanel.Dock="Right" Content="■  Sprache abbrechen"
+                            Padding="9,4" FontSize="10" Click="StopSpeech_Click"
+                            ToolTip="Laufende und vorgemerkte Sprachausgabe abbrechen" />
+                    <TextBlock x:Name="StatusText" Text="Lokale Sprachausgabe ist aktiv."
+                               Foreground="{DynamicResource MutedBrush}" FontSize="10"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+                <Border x:Name="ComposerBorder" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource ComposerBorderBrush}"
+                        BorderThickness="1" CornerRadius="24" Padding="9,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="36" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="42" />
+                            <ColumnDefinition Width="42" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="AddButton" Grid.Column="0" Content="＋" FontSize="19"
+                                BorderThickness="0" Padding="3" Foreground="{DynamicResource ControlGlyphBrush}"
+                                ToolTip="Dateien zum nächsten Prompt hinzufügen" Click="AddFiles_Click" />
+                        <TextBox x:Name="MessageInput" Grid.Column="1" BorderThickness="0"
+                                 Background="Transparent" Padding="5,10" FontSize="13"
+                                 VerticalContentAlignment="Center" AcceptsReturn="True"
+                                 TextWrapping="Wrap" MaxHeight="120" TextChanged="MessageInput_TextChanged"
+                                 PreviewKeyDown="MessageInput_PreviewKeyDown"
+                                 ToolTip="Nachricht schreiben (Enter zum Senden, Shift+Enter für neue Zeile)" />
+                        <Button x:Name="MicButton" Grid.Column="2" Content="♩" FontSize="18"
+                                BorderThickness="0" Padding="4" Foreground="{DynamicResource ControlGlyphBrush}"
+                                ToolTip="Spracheingabe starten" Click="MicButton_Click" />
+                        <Button x:Name="SendButton" Grid.Column="3" Content="↑" FontSize="19"
+                                Background="{DynamicResource AccentBrush}" Foreground="{DynamicResource AccentTextBrush}" BorderBrush="{DynamicResource AccentBrush}"
+                                Padding="4" Click="SendButton_Click" ToolTip="Senden" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="NOVA kann Fehler machen. Prüfe wichtige Informationen bitte selbst."
+                           Foreground="{DynamicResource MutedBrush}" FontSize="9" HorizontalAlignment="Center" Margin="0,9,0,0" />
+            </StackPanel>
+            </Grid>
+
+            <Grid x:Name="ResearchWorkspace" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed"
+                  Margin="32,24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Margin="0,0,0,18">
+                    <TextBlock Text="Research-Dossier" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock Text="Erstellt aus bis zu 50 Quellen ein strukturiertes Dokument mit Management-Zusammenfassung, Themenübersicht, detaillierten Themenkapiteln, Unterthemen, wichtigen Begriffen und Zusammenhängen sowie Quellen- und Grenzhinweisen. Die Zusammenfassung bleibt bearbeitbar und kann anschließend als gestaltetes PDF exportiert werden. PDFs dürfen jeweils bis zu 300 Seiten umfassen; insgesamt werden höchstens 10.000.000 Textzeichen verarbeitet. Audio wird mit Vosk lokal transkribiert. Wähle lokal oder den Cloudanbieter aus den Einstellungen; vor einer Cloudübertragung fragt NOVA ausdrücklich nach."
+                               TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" />
+                    <StackPanel x:Name="ResearchLocalModelOptions">
+                        <DockPanel Margin="0,12,0,0">
+                            <TextBlock Text="Lokales Modellprofil" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <ComboBox x:Name="ResearchModelCombo" Width="360" HorizontalAlignment="Left"
+                                      DisplayMemberPath="DisplayName" SelectedValuePath="ModelFile"
+                                      SelectionChanged="ResearchModelCombo_SelectionChanged"
+                                      ToolTip="Das ausgewählte lokale Modell wird nur für Research geladen." />
+                        </DockPanel>
+                        <TextBlock x:Name="ResearchModelHelp" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="0,5,0,0" />
+                    </StackPanel>
+                    <TextBlock x:Name="ResearchCloudModelHelp" TextWrapping="Wrap"
+                               Foreground="{DynamicResource MutedBrush}" FontSize="10" Margin="0,7,0,0"
+                               Visibility="Collapsed" />
+                    <ProgressBar x:Name="ResearchProgressBar" Height="3" Margin="0,9,0,3"
+                                 Minimum="0" Maximum="100" IsIndeterminate="True"
+                                 Visibility="Collapsed" />
+                    <DockPanel Margin="0,2,0,0">
+                        <Button x:Name="ResearchCancelButton" DockPanel.Dock="Right"
+                                Content="Research abbrechen" Padding="9,4" Margin="8,0,0,0"
+                                FontSize="10" Visibility="Collapsed" IsEnabled="False"
+                                Click="CancelTask_Click"
+                                ToolTip="Laufende Research-Verarbeitung abbrechen" />
+                        <TextBlock x:Name="ResearchProgressStatus" FontSize="10"
+                                   Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" Visibility="Collapsed" />
+                    </DockPanel>
+                </StackPanel>
+                <DockPanel Grid.Row="1" Margin="0,0,0,12">
+                    <Button x:Name="ResearchAddFilesButton" DockPanel.Dock="Right"
+                            Content="＋  Dateien auswählen" Padding="13,8"
+                            Click="AddResearchFiles_Click" />
+                    <Button x:Name="ClearResearchFilesButton" DockPanel.Dock="Right"
+                            Content="Auswahl leeren" Padding="10,8" Margin="0,0,8,0"
+                            Click="ClearResearchFiles_Click" />
+                    <TextBlock x:Name="ResearchFilesLabel" Text="Noch keine Dateien ausgewählt"
+                               VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
+                </DockPanel>
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Eingaben" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,7" />
+                    <ListBox x:Name="ResearchFilesList" Grid.Row="1" Background="{DynamicResource InputBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}" Foreground="{DynamicResource TextBrush}"
+                             Padding="6" ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+                </Grid>
+                <Grid Grid.Row="3" Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <Button x:Name="ExportResearchPdfButton" DockPanel.Dock="Right"
+                                Content="PDF exportieren" Padding="12,7" Click="ExportResearchPdf_Click"
+                                IsEnabled="False" />
+                        <CheckBox x:Name="ResearchWebImagesCheckBox" DockPanel.Dock="Right"
+                                  Content="Webbilder" Margin="0,0,10,0" VerticalAlignment="Center"
+                                  ToolTip="Optional: sucht beim PDF-Export nach bis zu 20 frei lizenzierten Bildern in Wikimedia Commons. Nur der erzeugte Dokumenttitel wird als Suchbegriff übertragen; Quelle, Urheber und Lizenz werden im PDF genannt." />
+                        <Button x:Name="SummarizeResearchButton" Content="Zusammenfassung starten"
+                                Padding="12,7" Margin="0,0,8,0" Click="SummarizeResearch_Click" />
+                    </DockPanel>
+                    <StackPanel Grid.Row="1" Margin="0,0,0,8">
+                        <TextBlock Text="Dein Fokus für die Zusammenfassung" FontSize="11"
+                                   FontWeight="SemiBold" Margin="2,0,0,5" />
+                        <TextBox x:Name="ResearchInstructionInput" MinHeight="54" MaxHeight="84"
+                                 MaxLength="800" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" Padding="9"
+                                 Background="{DynamicResource InputBrush}" Foreground="{DynamicResource TextBrush}"
+                                 BorderBrush="{DynamicResource BorderBrush}"
+                                 ToolTip="Optional: gewünschte Schwerpunkte, Detailtiefe oder Ausgabeform, zum Beispiel Stichpunkte mit Definitionen und Beispielen." />
+                    </StackPanel>
+                    <TextBox x:Name="ResearchSummaryText" Grid.Row="2" MinHeight="110" MaxHeight="270"
+                             AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                             Padding="12" Background="{DynamicResource InputBrush}" Foreground="{DynamicResource TextBrush}"
+                             BorderBrush="{DynamicResource BorderBrush}"
+                             ToolTip="Das vollständige Research-Dossier kann vor dem PDF-Export bearbeitet werden. Überschriften mit #, ## und ### werden im PDF als Hierarchie formatiert." />
+                    <TextBlock Grid.Row="3" Text="Unterstützt: PDF, Text/Markdown/Code, PNG/JPEG/WebP sowie WAV/MP3/M4A/AAC/WMA/FLAC. Audio wird lokal mit Vosk transkribiert. Bei Cloudauswahl wird auch das Transkript nur nach Bestätigung übertragen. Video und YouTube werden nicht transkribiert."
+                               TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                               Margin="2,8,2,0" />
+                </Grid>
+            </Grid>
+
+            <Grid x:Name="CoderWorkspace" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed"
+                  Margin="18,16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="2,0,2,12">
+                    <Button x:Name="CoderNewChatButton" DockPanel.Dock="Right"
+                            Content="＋ Neuer Chat" Padding="10,6"
+                            Click="NewCoderChat_Click" />
+                    <TextBlock Text="Lokaler Coder" FontSize="22" FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="290" MinWidth="220" MaxWidth="420" />
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="*" MinWidth="250" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            CornerRadius="8">
+                        <TabControl x:Name="CoderSidebarTabs" Margin="4">
+                            <TabItem Header="Projekt">
+                                <Grid Margin="10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="135" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Modellprofil" FontSize="11" FontWeight="SemiBold" />
+                                    <ComboBox x:Name="CoderModelCombo" Grid.Row="1" Margin="0,5,0,0"
+                                              DisplayMemberPath="DisplayName" SelectedValuePath="ModelFile"
+                                              SelectionChanged="CoderModelCombo_SelectionChanged"
+                                              ToolTip="Performance- und Qualitätsprofile für Codeaufgaben." />
+                                    <TextBlock x:Name="CoderModelLabel" Grid.Row="2"
+                                               Text="Wähle ein verfügbares lokales Modellprofil."
+                                               TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
+                                               FontSize="10" Margin="0,5,0,0" />
+                                    <TextBlock x:Name="CoderModelHelp" Grid.Row="3" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource MutedBrush}" FontSize="10"
+                                               Margin="0,3,0,8" />
+                                    <Border Grid.Row="4" Height="1" Background="{DynamicResource BorderBrush}"
+                                            Margin="0,0,0,8" />
+                                    <TextBlock Grid.Row="5" Text="Projektordner" FontSize="11"
+                                               FontWeight="SemiBold" />
+                                    <TextBox x:Name="CoderProjectDirectoryInput" Grid.Row="6" Margin="0,5,0,6"
+                                             ToolTip="Der Coder darf nur Dateien in diesem Ordner lesen und ändern." />
+                                    <Grid Grid.Row="7">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <DockPanel Grid.Row="0" Margin="0,0,0,5">
+                                            <Button x:Name="CoderRefreshProjectFilesButton" DockPanel.Dock="Right"
+                                                    Content="Aktualisieren" Padding="8,5"
+                                                    Click="RefreshCoderProjectFiles_Click" />
+                                            <Button x:Name="CoderBrowseProjectDirectoryButton"
+                                                    Content="Ordner wählen …" Padding="8,5"
+                                                    Margin="0,0,6,0"
+                                                    Click="BrowseCoderProjectDirectory_Click" />
+                                        </DockPanel>
+                                        <DockPanel Grid.Row="1" Margin="0,4,0,5">
+                                            <TextBlock Text="Projektdateien" FontSize="11"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock x:Name="CoderProjectFilesSummary" DockPanel.Dock="Right"
+                                                       Text="Noch nicht geladen" FontSize="9"
+                                                       Foreground="{DynamicResource MutedBrush}"
+                                                       VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <ListBox x:Name="CoderProjectFilesList" Grid.Row="2" MinHeight="100"
+                                                 Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                                 Foreground="{DynamicResource TextBrush}" Padding="3"
+                                                 SelectionChanged="CoderProjectFilesList_SelectionChanged"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                                    </Grid>
+                                    <TextBlock Grid.Row="8" Text="Dateivorschau" FontSize="10"
+                                               Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,3" />
+                                    <TextBox x:Name="CoderProjectFilePreview" Grid.Row="9" IsReadOnly="True"
+                                             AcceptsReturn="True" TextWrapping="NoWrap"
+                                             HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                             Padding="7" Background="{DynamicResource InputBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}"
+                                             ToolTip="Wähle eine Projektdatei, um ihren Inhalt anzusehen." />
+                                </Grid>
+                            </TabItem>
+                            <TabItem x:Name="CoderChangesTab" Header="Änderungen">
+                                <Grid Margin="10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock x:Name="CoderChangesSummary"
+                                               Text="Noch keine Änderungen vorbereitet."
+                                               TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
+                                               Margin="0,0,0,8" />
+                                    <TextBox x:Name="CoderPreviewText" Grid.Row="1" IsReadOnly="True"
+                                             AcceptsReturn="True" TextWrapping="NoWrap"
+                                             HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                             Padding="8" Background="{DynamicResource InputBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}"
+                                             ToolTip="Vorgeschlagene Dateien zur Prüfung vor dem Schreiben." />
+                                    <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                                        <Button x:Name="CoderApplyButton"
+                                                Content="Änderungen übernehmen …" Padding="8,7"
+                                                IsEnabled="False" Click="ApplyCoderChanges_Click" />
+                                        <Button x:Name="CoderDiscardButton" Content="Verwerfen" Padding="8,6"
+                                                Margin="0,6,0,0" IsEnabled="False"
+                                                Click="DiscardCoderChanges_Click" />
+                                    </StackPanel>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
+                    </Border>
+                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center"
+                                  VerticalAlignment="Stretch" Background="{DynamicResource BorderBrush}"
+                                  ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
+                    <Grid Grid.Column="2" Margin="12,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                            <ProgressBar x:Name="CoderProgressBar" Height="3" Margin="0,0,0,4"
+                                         Minimum="0" Maximum="100" IsIndeterminate="True"
+                                         Visibility="Collapsed" />
+                            <TextBlock x:Name="CoderProgressStatus" FontSize="10"
+                                       Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                                       Visibility="Collapsed" />
+                            <TextBlock x:Name="CoderStatusText"
+                                       Text="Wähle links einen Projektordner und beschreibe, was NOVA erstellen oder ändern soll."
+                                       TextWrapping="Wrap" FontSize="10"
+                                       Foreground="{DynamicResource MutedBrush}" />
+                        </StackPanel>
+                        <ListBox x:Name="CoderMessagesList" Grid.Row="1" Margin="0,0,0,10"
+                                 ItemTemplate="{StaticResource ChatMessageTemplate}"
+                                 Background="{DynamicResource InputBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                 Foreground="{DynamicResource TextBrush}" Padding="8"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        <StackPanel Grid.Row="2">
+                            <TextBox x:Name="CoderInstructionInput" MinHeight="64" MaxHeight="150"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto" Padding="10"
+                                     Background="{DynamicResource InputBrush}" Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource BorderBrush}"
+                                     ToolTip="Beschreibe das Programm oder die nächste gewünschte Änderung."
+                                     PreviewKeyDown="CoderInstructionInput_PreviewKeyDown" />
+                            <DockPanel Margin="0,7,0,0">
+                                <TextBlock Text="Enter zum Senden · Shift+Enter für neue Zeile"
+                                           VerticalAlignment="Center" FontSize="9"
+                                           Foreground="{DynamicResource MutedBrush}" />
+                                <Button x:Name="CoderSendButton" DockPanel.Dock="Right"
+                                        Content="Senden  ↑" Padding="14,8"
+                                        Click="SendCoderMessage_Click" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

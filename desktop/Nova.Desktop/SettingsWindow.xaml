@@ -1,0 +1,356 @@
+<Window x:Class="Nova.Desktop.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NOVA-Einstellungen" Width="620" Height="790" MinWidth="550" MinHeight="620"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}">
+    <Grid Margin="25">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="EINSTELLUNGEN" FontSize="10" FontWeight="SemiBold"
+                       Foreground="{DynamicResource AccentBrush}" />
+                <TextBlock Text="NOVA anpassen" FontSize="24" FontWeight="SemiBold"
+                       Margin="0,7,0,17" />
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+            <StackPanel>
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="DARSTELLUNG" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                        <TextBlock Text="Farbschema" FontSize="11" FontWeight="SemiBold"
+                                   Margin="0,0,0,6" />
+                        <ComboBox x:Name="ThemeCombo">
+                            <ComboBoxItem Content="Dunkel" Tag="Dark" />
+                            <ComboBoxItem Content="Hell" Tag="Light" />
+                        </ComboBox>
+                        <TextBlock Text="Gilt für NOVA, Einstellungen und Dialogfenster. Die Titelleiste wird ebenfalls angepasst."
+                                   TextWrapping="Wrap" FontSize="10"
+                                   Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="MODELL" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,13" />
+                        <TextBlock Text="Modell-Anbieter" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="ProviderCombo" SelectionChanged="ProviderCombo_SelectionChanged">
+                            <ComboBoxItem Content="Lokal mit llama.cpp (GGUF)" Tag="local" />
+                            <ComboBoxItem Content="Google Gemini (Cloud)" Tag="gemini" />
+                            <ComboBoxItem Content="DeepSeek (Cloud)" Tag="deepseek" />
+                            <ComboBoxItem Content="OpenRouter (Cloud, viele Modelle)" Tag="openrouter" />
+                            <ComboBoxItem Content="Hugging Face (Cloud)" Tag="huggingface" />
+                        </ComboBox>
+                        <StackPanel x:Name="LocalOptions">
+                            <TextBlock Text="Lokales Modell" FontSize="11" FontWeight="SemiBold" Margin="0,15,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="ModelCombo" Grid.Column="0" SelectedValuePath="FullPath">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Grid.Column="1" Content="↻" Margin="8,0,0,0" Width="40"
+                                        Click="RefreshModels_Click" ToolTip="Modellliste aktualisieren" />
+                            </Grid>
+                            <TextBlock Text="Modelle im Ordner models und in den unten hinzugefügten Ordnern werden gefunden. Netzwerkpfade (UNC) sind möglich; bei Nutzung müssen sie erreichbar und lesbar sein."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock Text="Weitere Modellordner für Chat, Research und Coder"
+                                       FontSize="11" FontWeight="SemiBold" Margin="0,14,0,6" />
+                            <ListBox x:Name="AdditionalModelDirectoriesList" Height="82"
+                                     SelectionMode="Single" />
+                            <DockPanel Margin="0,6,0,0">
+                                <Button DockPanel.Dock="Right" Content="Entfernen" Margin="8,0,0,0"
+                                        Click="RemoveModelDirectory_Click" />
+                                <Button Content="Ordner hinzufügen …" Click="AddModelDirectory_Click" />
+                            </DockPanel>
+                            <TextBlock x:Name="ModelDirectoryStatusText" TextWrapping="Wrap"
+                                       FontSize="10" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
+                            <TextBlock Text="Lokale Modell-Presets" FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,14,0,6" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Preset übernehmen"
+                                        Margin="8,0,0,0" Click="ApplyModelPreset_Click" />
+                                <ComboBox x:Name="ModelPresetCombo" DisplayMemberPath="Name"
+                                          SelectionChanged="ModelPresetCombo_SelectionChanged" />
+                            </DockPanel>
+                            <TextBlock x:Name="ModelPresetHelp" Text="Presets wählen ausschließlich ein bereits verfügbares GGUF-Modell; Laufzeit und manuelle Hardwarewerte bleiben unverändert."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock Text="Pfad zu llama-server.exe" FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,14,0,6" />
+                            <Grid Margin="0,0,0,7">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox x:Name="RuntimeCombo" Grid.Column="0" DisplayMemberPath="DisplayName"
+                                          SelectionChanged="RuntimeCombo_SelectionChanged" />
+                                <Button Grid.Column="1" Content="ZIPs einlesen" Margin="8,0,0,0"
+                                        Click="ImportRuntimes_Click" />
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="LlamaPathInput" Grid.Column="0"
+                                         TextChanged="LlamaPathInput_TextChanged" />
+                                <Button Grid.Column="1" Content="Durchsuchen …" Margin="8,0,0,0"
+                                        Click="BrowseLlama_Click" />
+                            </Grid>
+                            <TextBlock Text="ZIPs in llama-runtimes\CPU, CUDA oder Vulkan ablegen und hier einlesen. Alternativ llama-server.exe direkt auswählen."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock x:Name="RuntimeDetailsText" Text="Backend nicht ausgewählt."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0" />
+                            <TextBlock Text="Vision-Projektor (mmproj, optional)" FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,14,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="VisionProjectorPathInput" Grid.Column="0" />
+                                <Button Grid.Column="1" Content="Durchsuchen …" Margin="8,0,0,0"
+                                        Click="BrowseVisionProjector_Click" />
+                            </Grid>
+                            <TextBlock Text="Für lokale Bildanalyse muss die mmproj-Datei exakt zum ausgewählten multimodalen GGUF-Modell passen. Bekannte NOVA-Modelle verwenden nur ihren hinterlegten passenden Projektor; inkompatible Projektoren werden ignoriert. Research kann Bilder alternativ mit dem separaten Vision-Fallback analysieren."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,6,0,0" />
+                        </StackPanel>
+                        <StackPanel x:Name="CloudOptions" Visibility="Collapsed">
+                            <TextBlock Text="Cloud-Modell-ID" FontSize="11" FontWeight="SemiBold" Margin="0,15,0,6" />
+                            <TextBox x:Name="CloudModelInput" />
+                            <TextBlock x:Name="CloudHelp" TextWrapping="Wrap" FontSize="10"
+                                       Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
+                            <TextBlock Text="API-Schlüssel" FontSize="11" FontWeight="SemiBold" Margin="0,13,0,6" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="CloudApiKeyInput" Grid.Column="0"
+                                             PasswordChanged="CloudApiKeyInput_PasswordChanged" />
+                                <Button Grid.Column="1" Content="Schlüssel löschen" Margin="8,0,0,0"
+                                        Click="ClearCloudApiKey_Click" />
+                            </Grid>
+                            <TextBlock x:Name="CloudKeyStatus" TextWrapping="Wrap" FontSize="10"
+                                       Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" />
+                            <TextBlock Text="Bei ausgewähltem Cloudanbieter werden Chatnachrichten an diesen Anbieter gesendet. Datei-Anhänge und Research-Inhalte erfordern eine separate Bestätigung. Es können Kosten anfallen. API-Schlüssel werden im Windows-Anmeldeinformationsspeicher abgelegt; alternativ kannst du den passenden Schlüssel in .env neben NOVA.exe eintragen."
+                                       TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                       Margin="0,10,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="AUTOMATISIERUNG UND BERECHTIGUNGEN" FontSize="10"
+                                   FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
+                                   Margin="0,0,0,12" />
+                        <CheckBox x:Name="AutoCreateWorkspaceFilesCheck"
+                                  Foreground="{DynamicResource TextBrush}">
+                            <TextBlock Text="Dateien im NOVA-Arbeitsordner ohne Einzelbestätigung erstellen/überschreiben"
+                                       TextWrapping="Wrap" />
+                        </CheckBox>
+                        <TextBlock Text="Gilt nur für Dateien innerhalb Dokumente\NOVA-Workspace. Builds und andere Aktionen fragen weiterhin einzeln nach einer Bestätigung."
+                                   TextWrapping="Wrap" FontSize="10"
+                                   Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="SPRACHE UND EIN-/AUSGABE" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                        <CheckBox x:Name="SpeakResponsesCheck" Content="Text-to-Speech: Antworten vorlesen"
+                                  Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10" />
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="270" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Mikrofon" FontSize="11" VerticalAlignment="Center" />
+                            <ComboBox x:Name="MicrophoneDeviceCombo" Grid.Column="1" DisplayMemberPath="Name" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Mikrofonpegel in NOVA" FontSize="11" VerticalAlignment="Center" />
+                            <Slider x:Name="MicrophoneVolumeSlider" Grid.Column="1" Minimum="0" Maximum="200"
+                                    TickFrequency="10" IsSnapToTickEnabled="True" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="270" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Lautsprecher" FontSize="11" VerticalAlignment="Center" />
+                            <ComboBox x:Name="SpeakerDeviceCombo" Grid.Column="1" DisplayMemberPath="Name" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="210" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Windows-Stimme" FontSize="11" VerticalAlignment="Center" />
+                            <ComboBox x:Name="SpeechVoiceCombo" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Sprechtempo" FontSize="11" VerticalAlignment="Center" />
+                            <Slider x:Name="SpeechRateSlider" Grid.Column="1" Minimum="-10" Maximum="10"
+                                    TickFrequency="1" IsSnapToTickEnabled="True" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="190" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Lautstärke" FontSize="11" VerticalAlignment="Center" />
+                            <Slider x:Name="SpeechVolumeSlider" Grid.Column="1" Minimum="0" Maximum="100"
+                                    TickFrequency="10" IsSnapToTickEnabled="True" />
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="150" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Erkennungssprache" FontSize="11" VerticalAlignment="Center" />
+                            <ComboBox x:Name="RecognitionCultureCombo" Grid.Column="1">
+                                <ComboBoxItem Content="Deutsch (de-DE)" Tag="de-DE" />
+                                <ComboBoxItem Content="English (en-US)" Tag="en-US" />
+                            </ComboBox>
+                        </Grid>
+                        <Grid Margin="0,0,0,9">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="100" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Erkennungs-Konfidenz (0–1)" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="RecognitionConfidenceInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="150" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Antwortformat" FontSize="11" VerticalAlignment="Center" />
+                            <ComboBox x:Name="OutputFormatCombo" Grid.Column="1">
+                                <ComboBoxItem Content="Freier Text" Tag="text" />
+                                <ComboBoxItem Content="JSON-Objekt" Tag="json" />
+                            </ComboBox>
+                        </Grid>
+                        <WrapPanel Margin="0,11,0,0">
+                            <Button Content="Mikrofon testen" Padding="12,7" Margin="0,0,8,0"
+                                    Click="TestMicrophone_Click" />
+                            <Button Content="Stimme testen" Padding="12,7" Margin="0,0,8,0"
+                                    Click="TestVoice_Click" />
+                            <Button Content="Windows-Audioeinstellungen" Padding="12,7"
+                                    Click="OpenWindowsAudioSettings_Click" />
+                        </WrapPanel>
+                        <TextBlock Text="Mikrofonpegel skaliert das ausgewählte Eingangssignal in NOVA; Lautstärke steuert NOVAs Ausgabe. Geräte können unabhängig vom Windows-Standard gewählt werden."
+                                   TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                   Margin="0,9,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="PROMPT" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,11" />
+                        <TextBlock Text="System Prompt" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="SystemPromptInput" MinHeight="78" MaxHeight="130"
+                                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                 ToolTip="Lege hier zusätzliche Regeln fest. NOVA sendet sie ausdrücklich als benutzerdefinierte Anweisungen an das Modell." />
+                        <TextBlock Text="NOVA wiederholt wichtige Regeln im Systemprompt. System-Sicherheit und die deutsche Antwortsprache (außer bei ausdrücklichem Sprachwunsch) haben Vorrang. Kleine Modelle befolgen Prompts nicht immer zuverlässig."
+                                   TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="PerformanceCard" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="KONTEXT UND LEISTUNG" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="110" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Kontextlänge (Tokens)" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="ContextLengthInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="GPU-Layer (0 = CPU)" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="GpuLayersInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="CPU-Threads" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="CpuThreadsInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Batch-Größe" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="BatchSizeInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Physische Batch-Größe" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="PhysicalBatchInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Parallele Anfragen" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="ParallelInput" Grid.Column="1" />
+                        </Grid>
+                        <CheckBox x:Name="FlashAttentionCheck" Content="Flash Attention aktivieren"
+                                  Foreground="{DynamicResource TextBrush}" Margin="0,7,0,5" />
+                        <CheckBox x:Name="MemoryLockCheck" Content="Modell im Arbeitsspeicher halten (mlock)"
+                                  Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5" />
+                        <CheckBox x:Name="ContextShiftCheck" Content="Kontext bei Bedarf fortschreiben"
+                                  Foreground="{DynamicResource TextBrush}" />
+                        <TextBlock Text="Hohe Werte benötigen mehr RAM bzw. VRAM. Bei Startproblemen GPU-Layer oder Batch-Größe reduzieren."
+                                   TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                   Margin="0,9,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="GenerationCard" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="GENERIERUNG UND NACHDENKEN" FontSize="10" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,12" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Temperatur (0 bis 2)" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="TemperatureInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Maximale Antwortlänge" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="MaxTokensInput" Grid.Column="1" />
+                        </Grid>
+                        <Grid x:Name="ReasoningBudgetRow" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Lokales Denkbudget (0 = aus)" FontSize="11" VerticalAlignment="Center" />
+                            <TextBox x:Name="ReasoningBudgetInput" Grid.Column="1" />
+                        </Grid>
+                        <TextBlock Text="Stop-Sequenzen (eine pro Zeile)" FontSize="11" FontWeight="SemiBold" Margin="0,5,0,6" />
+                        <TextBox x:Name="StopStringsInput" MinHeight="48" MaxHeight="90"
+                                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                        <TextBlock x:Name="ReasoningHelp" Text="Das Denkbudget wird nur an lokale Modelle weitergegeben, die reasoning_budget unterstützen."
+                                   TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource MutedBrush}"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+                <TextBlock x:Name="SettingsError" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap"
+                           FontSize="11" Margin="0,2,0,8" Visibility="Collapsed" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Abbrechen" MinWidth="90" Margin="0,0,9,0" Click="Cancel_Click" />
+            <Button Content="Speichern" MinWidth="100" Background="{DynamicResource AccentBrush}"
+                    Foreground="{DynamicResource AccentTextBrush}" BorderBrush="{DynamicResource AccentBrush}" Click="Save_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

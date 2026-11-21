@@ -2,7 +2,7 @@
 
 NOVA ist jetzt eine **native Windows-Desktop-App mit WPF/.NET** – kein Browserfenster und keine HTML-Oberfläche. Das Design orientiert sich am geteilten Beispiel: dunkler Chat, schlichte Seitenleiste und eine einzelne Eingabezeile.
 
-> **Windows x64:** [Aktuelle Version herunterladen](https://github.com/Buhawi/NOVA-Desktop/releases/latest). Das Release enthält die selbstenthaltende NOVA-App, Installer und Lizenzhinweise. GGUF-Modelle und llama.cpp-Runtimes sind nicht enthalten; lokale Inferenz erfordert eigene, separat bezogene Dateien. Alternativ können optionale Cloudanbieter mit eigenen API-Schlüsseln verwendet werden.
+> **Windows x64:** [Aktuelle Version herunterladen](https://github.com/buhawitesorolippe-spec/NOVA-Desktop/releases/latest). Das Release enthält die selbstenthaltende NOVA-App, Installer und Lizenzhinweise. GGUF-Modelle und llama.cpp-Runtimes sind nicht enthalten; lokale Inferenz erfordert eigene, separat bezogene Dateien. Alternativ können optionale Cloudanbieter mit eigenen API-Schlüsseln verwendet werden.
 
 ## Chat und Sprache
 
@@ -47,7 +47,7 @@ Die Pocket-Presets verwenden dieselben GGUF-Modelle wie die Android-App. Die üb
 | Preset | Exakte Datei | Hinweis |
 |---|---|---|
 | Pocket · Performance | `Qwen3-0.6B-Q4_K_M.gguf` | Schnelles 0,6B-Textmodell; Bildaufgaben nutzen den separaten SmolVLM2-500M-Fallback |
-| Pocket · Ultra-Performance | `SmolVLM2-256M-Video-Instruct-Q4_K_M.gguf` | Sehr kleines Text-/Bildmodell mit `mmproj-SmolVLM2-256M-Video-Instruct-Q8_0.gguf`; einfachere Antworten |
+| Pocket · Ultra-Performance | `SmolVLM2-256M-Video-Instruct-Q4_K_M.gguf` | Sehr kleines Text-/Bildmodell mit `mmproj-SmolVLM2-256M-Video-Instruct-Q8_0.gguf`; einfachere Antworten. Für Research-Text nutzt NOVA automatisch das kleinste verfügbare Textmodell (mindestens Pocket Performance, 0,6B), da 0,25B keine zuverlässigen Zusammenfassungen liefert. |
 | Performance | `DeepSeek-R1-Distill-Qwen-1.5B-Q8_0.gguf` | Kompaktes 1,5B-Modell |
 | Quality | `Qwen3.8-2B-Q8_0.gguf` | Allgemeines 2B-Modell |
 | Ultra-Quality | `WikiQwen-4B.Q4_K_M.gguf` | Spezialisiertes WikiQwen; nicht als allgemeines Modell gedacht |
